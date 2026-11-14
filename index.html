@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Jos Alukkas Tenkasi Voucher</title>
+<script src="https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.js"></script>
+<style>
+  :root { --bg:#f6f4ef; --card:#fff; --ink:#1d1d1b; --muted:#6b6a64; --line:#ddd8cc; --accent:#7a1f2b; --accent-ink:#fff; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#161513; --card:#201f1c; --ink:#f1eee6; --muted:#a39f94; --line:#3a3832; --accent:#c4505f; --accent-ink:#fff; }
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; }
+  .wrap { max-width:960px; margin:0 auto; padding:24px 16px 48px; }
+  h1 { font-size:1.4rem; margin:0 0 4px; }
+  .sub { color:var(--muted); margin:0 0 20px; font-size:.9rem; }
+  .grid { display:grid; gap:16px; grid-template-columns:1fr; }
+  @media (min-width:800px) { .grid { grid-template-columns:340px 1fr; } }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:18px; }
+  label { display:block; font-size:.85rem; color:var(--muted); margin:12px 0 4px; }
+  label:first-child { margin-top:0; }
+  input { width:100%; padding:10px 12px; font-size:1rem; border:1px solid var(--line); border-radius:8px; background:var(--bg); color:var(--ink); }
+  input:focus { outline:2px solid var(--accent); outline-offset:1px; }
+  button { margin-top:18px; width:100%; padding:12px; font-size:1rem; font-weight:600; border:0; border-radius:8px; background:var(--accent); color:var(--accent-ink); cursor:pointer; }
+  button:disabled { opacity:.5; cursor:not-allowed; }
+  .status { font-size:.85rem; margin-top:6px; min-height:1.2em; }
+  .ok { color:#2e7d32; } .warn { color:#b26a00; }
+  @media (prefers-color-scheme: dark) { .ok { color:#7bd88f; } .warn { color:#ffb454; } }
+  .preview { font-family:Georgia,"Times New Roman",serif; }
+  .preview .hdr { text-align:right; font-size:.8rem; line-height:1.35; border-bottom:1px solid var(--line); padding-bottom:10px; margin-bottom:14px; }
+  .preview .date { text-align:right; }
+  .preview .title { text-align:center; font-weight:bold; text-decoration:underline; margin:18px 0; }
+  .preview p { text-align:justify; }
+  .split { font-family:system-ui,sans-serif; font-size:.85rem; color:var(--muted); border-top:1px dashed var(--line); margin-top:16px; padding-top:10px; }
+  .fname { font-family:ui-monospace,monospace; font-size:.75rem; color:var(--muted); word-break:break-all; margin-top:8px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Jos Alukkas Tenkasi – Cash Deposit Voucher</h1>
+  <p class="sub">Enter EC number or name, add the amounts, and download the Word voucher.</p>
+
+  <div class="grid">
+    <div class="card">
+      <label for="emp">EC No or Name</label>
+      <input id="emp" list="emplist" autocomplete="off" placeholder="e.g. 1037 or Girish">
+      <datalist id="emplist"></datalist>
+      <div class="status" id="status"></div>
+
+      <label for="shop">Shop Deposit Amount</label>
+      <input id="shop" inputmode="numeric" placeholder="Enter amount">
+
+      <label for="scheme">Scheme Deposit Amount</label>
+      <input id="scheme" inputmode="numeric" placeholder="Enter amount">
+
+      <button id="gen">Generate Voucher</button>
+    </div>
+
+    <div class="card preview" id="preview"></div>
+  </div>
+</div>
+
+<script>
+// ================= BRANCH CONFIG =================
+const CFG = {
+  branch: "TENKASI",
+  company: "JOS ALUKKAS INDIA PRIVATE LIMITED",
+  former: "(Formerly known as Alukkas Enterprises Private Limited)",
+  cin: "U36911KL2004PTC017440",
+  addr1: "DOOR NO. 43/2B, 43/2B/1, RAILWAY ROAD STREET,",
+  addr2: "TENKASI, TAMIL NADU - 627811",
+  gst: "33AAFCA0423M2ZZ",
+  phone: "04633-211916 / 291916",
+  email: "tenkasi@alukkasgroup.com",
+  bank: "State Bank of India",
+  bankBranch: "Tenkasi",
+  van: "ALKENTTENKAS318"
+};
+
+const EMP = {
+  "1037":"Girish B","11063":"Simson Thomas","1205":"Jenson Varghese","12086":"Balaji S","12384":"Praveen K P",
+  "12450":"Devanand K S","12884":"Shihab S","12905":"Nantha Kumar P","12929":"Vishnu M","13012":"Sebastin Raja S",
+  "13504":"Arun Pandi M","14306":"Deepak Jayakumar","16230":"Sneha S","16231":"Marilingam T","16232":"Divya A",
+  "16245":"M J Lijil Krishna","16291":"Sornam M","16317":"Anusiya T","16408":"M Ramalakshmi","16409":"Eswari M",
+  "16410":"Sathina K","16465":"Prakasan","16466":"Muppidathi K","16521":"Ganeshwari K","16522":"M Esakiammal",
+  "16523":"Manoj S","16524":"Poomari Sakthivel","16532":"Mathan Balaa M","16535":"Thangaraj Paramasivan",
+  "2613":"Nishad A","3050":"Sudheesh P S","3219":"Dhanesh P K","4440":"Mubarak S","5044":"Jameskutty Philip",
+  "5317":"Vasudevan K","5644":"Sudalaiyandi R","779":"Ratheesh S","8355":"Johnson Thomas","9428":"Anuraj R",
+  "16229":"Akash"
+};
+
+// ================= HELPERS =================
+const $ = id => document.getElementById(id);
+
+function titleCase(s){ return s.toLowerCase().replace(/\b\w/g, c => c.toUpperCase()); }
+
+function resolveBearer(input){
+  input = (input || "").trim();
+  if (!input) return { name:"Bearer", matched:false };
+  if (EMP[input]) return { name:EMP[input], matched:true };
+  const q = input.toLowerCase();
+  const names = Object.values(EMP);
+  let hit = names.find(n => n.toLowerCase() === q) || names.find(n => n.toLowerCase().includes(q));
+  if (hit) return { name:hit, matched:true };
+  return { name:titleCase(input), matched:false };
+}
+
+function amt(v){
+  const n = parseInt(String(v || "").replace(/[^\d]/g, ""), 10);
+  return isNaN(n) ? 0 : n;
+}
+
+function indianFormat(n){
+  const s = String(n);
+  if (s.length <= 3) return s;
+  const last3 = s.slice(-3);
+  const rest = s.slice(0, -3).replace(/\B(?=(\d{2})+(?!\d))/g, ",");
+  return rest + "," + last3;
+}
+
+const ONES = ["Zero","One","Two","Three","Four","Five","Six","Seven","Eight","Nine","Ten","Eleven","Twelve",
+  "Thirteen","Fourteen","Fifteen","Sixteen","Seventeen","Eighteen","Nineteen"];
+const TENS = ["","","Twenty","Thirty","Forty","Fifty","Sixty","Seventy","Eighty","Ninety"];
+const UNITS = [[10000000,"Crore"],[100000,"Lakh"],[1000,"Thousand"]];
+
+function words(n){
+  if (n < 20) return ONES[n];
+  if (n < 100) return TENS[Math.floor(n/10)] + (n%10 ? " " + ONES[n%10] : "");
+  if (n < 1000) return ONES[Math.floor(n/100)] + " Hundred" + (n%100 ? " And " + words(n%100) : "");
+  for (const [u, name] of UNITS){
+    if (n >= u){
+      const q = Math.floor(n/u), r = n % u;
+      return words(q) + " " + name + (r ? (r < 100 ? " And " : " ") + words(r) : "");
+    }
+  }
+}
+const amountWords = n => n <= 0 ? "Zero Only" : words(n) + " Only";
+
+function today(){
+  const p = new Intl.DateTimeFormat("en-GB", { timeZone:"Asia/Kolkata", day:"2-digit", month:"2-digit", year:"numeric" }).formatToParts(new Date());
+  const g = t => p.find(x => x.type === t).value;
+  return `${g("day")}-${g("month")}-${g("year")}`;
+}
+
+function cleanName(n){
+  if (!n || n.toLowerCase() === "bearer") return "Bearer";
+  return n.trim().replace(/[^A-Za-z0-9 ]/g, "").replace(/\s+/g, "_").slice(0, 20);
+}
+
+function esc(s){ return s.replace(/[&<>]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;"}[c])); }
+
+function state(){
+  const b = resolveBearer($("emp").value);
+  const shop = amt($("shop").value), scheme = amt($("scheme").value), total = shop + scheme;
+  return { ...b, shop, scheme, total, totalFmt: indianFormat(total), words: amountWords(total), date: today() };
+}
+
+function filename(s){ return `Jos_Alukkas_${s.date}_${cleanName(s.name)}_cash_deposit.docx`; }
+
+// ================= UI =================
+function render(){
+  const s = state();
+  const st = $("status");
+  if (!$("emp").value.trim()) { st.textContent = ""; st.className = "status"; }
+  else if (s.matched) { st.textContent = "✓ Employee matched: " + s.name; st.className = "status ok"; }
+  else { st.textContent = "? Not in list – will be used as typed"; st.className = "status warn"; }
+
+  $("preview").innerHTML = `
+    <div class="hdr"><b>${esc(CFG.company)}</b><br><b>${esc(CFG.former)}</b><br>CIN :${CFG.cin}<br>
+      ${esc(CFG.addr1)}<br>${esc(CFG.addr2)}<br>GST NO:-${CFG.gst}<br>Phone:-${CFG.phone} Email:${CFG.email}</div>
+    <div class="date">Date: ${s.date}</div>
+    <div class="title">TO WHOMSOEVER IT MAY CONCERN</div>
+    <p>We, <b>${esc(CFG.company)}</b> Br ${CFG.branch}, are sending cash worth Rs. <b>${s.totalFmt}/-</b>
+      (Rupees ${s.words}) through the bearer of this letter Mr. <b>${esc(s.name)}</b> from our shop to
+      ${CFG.bank} (${CFG.bankBranch}) VAN Code <b>${CFG.van}</b> for our cash deposit in ${CFG.bank} A/c.</p>
+    <p><b>Specimen Signature of Mr. ${esc(s.name)} is appended below.</b></p>
+    <p>&nbsp;</p><p>Authorized Signatory</p>
+    <div class="split">Shop: Rs. ${indianFormat(s.shop)} &nbsp;|&nbsp; Scheme: Rs. ${indianFormat(s.scheme)} &nbsp;|&nbsp; Total: Rs. ${s.totalFmt}
+      <div class="fname">${esc(filename(s))}</div></div>`;
+}
+
+async function generate(){
+  const s = state();
+  if (!s.total) { alert("Please enter at least one amount."); return; }
+  const { Document, Packer, Paragraph, TextRun, AlignmentType, Header } = docx;
+
+  const hl = (text, size, bold) => new Paragraph({
+    alignment: AlignmentType.RIGHT, spacing: { before:0, after:0 },
+    children: [ new TextRun({ text, size:size*2, bold }) ]
+  });
+  const blank = () => new Paragraph({ children: [] });
+  const run = (text, bold) => new TextRun({ text, bold: !!bold, size: 24 });
+
+  const doc = new Document({
+    sections: [{
+      properties: { page: { margin: { top: 1150 } } },
+      headers: { default: new Header({ children: [
+        hl(CFG.company, 11, true), hl(CFG.former, 9, true), hl("CIN :" + CFG.cin, 11, false),
+        hl(CFG.addr1, 9, false), hl(CFG.addr2, 9, false), hl("GST NO:-" + CFG.gst, 9, false),
+        hl(`Phone:-${CFG.phone}  Email:${CFG.email}`, 9, false)
+      ] }) },
+      children: [
+        blank(),
+        new Paragraph({ alignment: AlignmentType.RIGHT, children: [ run("Date: " + s.date) ] }),
+        blank(),
+        new Paragraph({ alignment: AlignmentType.CENTER, children: [ new TextRun({ text:"TO WHOMSOEVER IT MAY CONCERN", bold:true, underline:{}, size:28 }) ] }),
+        blank(), blank(),
+        new Paragraph({ alignment: AlignmentType.JUSTIFIED, children: [
+          run("We, "), run(CFG.company, true), run(` Br ${CFG.branch}, are sending cash worth Rs. `),
+          run(s.totalFmt + "/- ", true),
+          run(`(Rupees ${s.words}) through the bearer of this letter Mr. `), run(s.name, true),
+          run(` from our shop to ${CFG.bank} (${CFG.bankBranch}) VAN Code `), run(CFG.van, true),
+          run(` for our cash deposit in ${CFG.bank} A/c.`)
+        ] }),
+        blank(), blank(),
+        new Paragraph({ children: [ run(`Specimen Signature of Mr. ${s.name} is appended below.`, true) ] }),
+        blank(),
+        new Paragraph({ children: [ run("Authorized Signatory") ] })
+      ]
+    }]
+  });
+
+  const blob = await Packer.toBlob(doc);
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = filename(s);
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+}
+
+$("emplist").innerHTML = Object.entries(EMP).map(([k, v]) => `<option value="${k}">${esc(v)}</option>`).join("");
+["emp","shop","scheme"].forEach(id => $(id).addEventListener("input", render));
+$("gen").addEventListener("click", generate);
+render();
+</script>
+</body>
+</html>
